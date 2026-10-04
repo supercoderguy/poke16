@@ -1,7 +1,7 @@
 """Pikachu: electric yellow, black-tipped ears, red cheek buttons, a lightning tail, back stripes."""
 
 from base import Art, circle, frame, path, rect, svg, vgrad
-from themes._common import frame_bottom, frame_corner, frame_side, glyph, title_grad, tri_arrow
+from themes._common import plump_ear, frame_bottom, frame_corner, frame_side, glyph, title_grad, tri_arrow
 
 YELLOW_LT = "#fff176"
 YELLOW = "#ffe200"
@@ -67,6 +67,31 @@ class Pikachu(Art):
     ROFI = dict(border_color=BLACK, radius=10, sel=(
         "background-color: #fe4224; border: 2px; border-color: #c02a14; border-radius: 12px;"))
 
+    # ---- shape: ears above the title bar, the bolt tail out of the right side ----
+
+    SHAPE = dict(top=30, right=26)      # right margin + 5px frame = the tail's width
+
+    def decorations(self):
+        T = self.SHAPE["top"]
+
+        def ears(active):
+            kw = {} if active else dict(fill=PALE_DK, tipc=TAN, edge=TAN)
+            # long, leaf-shaped ears leaning outward; bases sink into the title bar's top edge
+            b = plump_ear((12, T + 3), (28, T + 3), (3, 2), "l", **kw)
+            b += plump_ear((40, T + 3), (56, T + 3), (66, 3), "r", **kw)
+            return svg(70, T + 3, b)
+
+        def tail(active):
+            fill, edge, base = (YELLOW, BLACK, BROWN) if active else (PALE_DK, TAN, TAN)
+            # the lightning-bolt tail: brown root inside the frame, zigzagging up and out
+            d = ("M0,38 L12,31 L7,23 L21,16 L16,9 L30,1 L30,13 L24,16 L29,23 L14,32 L19,37 L0,48 Z")
+            b = path(d, fill=fill, stroke=edge, sw=1.2)
+            b += path("M0,38 L6,35 L7,45 L0,48 Z", fill=base, stroke=edge, sw=0.8)
+            return svg(31, 49, b)
+
+        return [("ears", 70, T + 3, "tl", 8, 0, ears),
+                ("tail", 31, 49, "tr", 0, T + 30, tail)]
+
     # ---- window borders: Pikachu's back ----------------------------------------
 
     def _title_bg(self, w, active, dy=0):
@@ -95,17 +120,16 @@ class Pikachu(Art):
         return svg(w, h, b, vgrad("g", [(0, YELLOW_LT), (0.5, YELLOW), (1, YELLOW_DK)]))
 
     def emblem(self, s, state):
-        """Pikachu's two black-tipped ears."""
+        """A red cheek (the ears now stand up above the title bar)."""
         defs, b = self._title_bg(s, state != "inactive")
         b += rect(0, 0, 1, s, BLACK if state != "inactive" else TAN)
+        cx, cy = s / 2 + 1, s / 2 - 1.5
         if state == "inactive":
-            kw = dict(fill=PALE_DK, tipc=TAN, edge=TAN)
-        else:
-            kw = dict()
-        if state == "hover":   # sparks between the ears
-            for x1, y1, x2, y2 in ((13, 3, 15, 7), (15, 7, 13, 9), (19, 2, 18, 5)):
-                b += path(f"M{x1},{y1} L{x2},{y2}", stroke=CHEEK, sw=1.2)
-        b += ear((5, 20), (10, 20), (3, 2), **kw) + ear((16, 20), (21, 20), (24, 3), **kw)
+            return svg(s, s, b + circle(cx, cy, 7, PALE_DK, TAN, 1), defs)
+        if state == "hover":   # sparks off the cheek
+            for x1, y1, x2, y2 in ((2, 4, 5, 7), (s - 2, 4, s - 5, 7), (2, s - 8, 5, s - 10)):
+                b += path(f"M{x1},{y1} L{x2},{y2}", stroke=AMBER, sw=1.3)
+        b += circle(cx, cy, 7.5, CHEEK, CHEEK_DK, 1.2) + circle(cx - 2.5, cy - 2.5, 2, WHITE, extra='opacity="0.5"')
         return svg(s, s, b, defs)
 
     def button(self, kind, s, state):

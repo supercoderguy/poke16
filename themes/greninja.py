@@ -70,3 +70,25 @@ class Greninja(Kit):
 
     def bubble_art(self, s, i):
         return circle(s / 2, s / 2, s / 2 - 0.5, AQUA, CYAN, 0.8)
+
+
+    # ---- shape: its tongue scarf trailing out of the left side, a water splash on top ----
+
+    SHAPE = dict(top=14, left=34)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def scarf(active):
+            c, e = (PINK, "#a0607a") if active else ("#3a3a48", "#2a2a34")
+            d = "M39,6 C26,4 20,14 10,12 C4,11 2,6 0,4 C2,14 8,20 16,20 C24,20 30,14 39,18 Z"
+            d2 = "M39,20 C30,22 26,32 14,34 C8,35 4,32 2,30 C6,40 16,42 24,38 C30,35 34,30 39,30 Z"
+            return svg(39, 44, path(d, fill=c, stroke=e, sw=1.2) + path(d2, fill=c, stroke=e, sw=1.2))
+
+        def spray(active):
+            return svg(40, T + 3, splash(2, T + 3 - 10 * 1.6, 1.6, AQUA if active else "#3a4458"))
+
+        return [("scarf", 39, 44, "tl", 0, T + 8, scarf),
+                ("splash", 40, T + 3, "tl", 40, 0, spray)]

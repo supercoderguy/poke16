@@ -226,3 +226,27 @@ class Lunala(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: its wings reaching out of both sides, ribbed in silver with crescent-gold claws ----
+
+    SHAPE = dict(left=28, right=28)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        W, H = 33, 80
+
+        def wing(active):
+            body, rib, claw = (WING, SILVER, CRESCENT) if active else (DIM, "#4a4668", "#5a5878")
+            d = f"M{W},4 C18,0 4,8 1,22 C8,22 12,28 10,36 C16,34 20,40 18,50 C24,48 28,56 {W},62 Z"
+            b = path(d, fill=body, stroke=rib, sw=1.4)
+            for y1, x2, y2 in ((10, 4, 22), (24, 11, 36), (40, 19, 50)):
+                b += path(f"M{W},{y1} Q{(W + x2) / 2},{y1 + 2} {x2},{y2}", stroke=rib, sw=1.2)
+                b += path(f"M{x2},{y2} l-3,-4 l5,1 Z", fill=claw)
+            return b
+
+        return [("wing_l", W, H, "tl", 0, 8, lambda a: svg(W, H, wing(a))),
+                ("wing_r", W, H, "tr", 0, 8, lambda a: svg(W, H, mirror(W, wing(a))))]

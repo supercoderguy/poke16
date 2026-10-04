@@ -271,3 +271,24 @@ class Miraidon(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: swept-back antenna fins with glowing tips above the title bar ----
+
+    SHAPE = dict(top=28)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def fins(active):
+            body, edge, glow = (INDIGO, CYAN, HOTPINK) if active else (SLATE, SLATE_LINE, SLATE_LINE)
+            kw = dict(fill=body, tipc=glow, edge=edge, bulge=0.16, tip_len=0.22, sw=1.3)
+            b = plump_ear((14, T + 3), (26, T + 3), (2, 2), "l", **kw)
+            b += plump_ear((30, T + 3), (42, T + 3), (52, 4), "r", **kw)
+            if active:
+                b += circle(2.5, 2.5, 2, CYAN) + circle(51.5, 4.5, 2, CYAN)
+            return svg(56, T + 3, b)
+
+        return [("fins", 56, T + 3, "tl", 0, 0, fins)]

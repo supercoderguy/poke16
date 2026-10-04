@@ -1,6 +1,7 @@
 """Umbreon: gold line-art on black, moon-phase buttons, red-eye highlights."""
 
 from base import Art, circle, frame, line, path, rect, sparkle, svg, vgrad
+from themes._common import plump_ear
 
 BLACK = "#050505"
 PANEL = "#0c0b0d"
@@ -73,6 +74,23 @@ class Umbreon(Art):
         b += line(0, h - 3.5, w, h - 3.5, GOLD) + line(0, h - 1.5, w, h - 1.5, GOLD, extra='opacity="0.55"')
         b += sparkle(12, h / 2 - 1, 4.5, GOLD_HI) + sparkle(w - 12, h / 2 - 1, 4.5, GOLD_HI)
         return svg(w, h, b)
+
+    # ---- shape: Umbreon's tall ears, gold-ringed, rising above the title bar ----
+
+    SHAPE = dict(top=42)
+
+    def decorations(self):
+        T = self.SHAPE["top"]
+
+        def ears(active):
+            c, band = (GOLD, GOLD_HI) if active else (GOLD_DIM, GOLD_DIM)
+            kw = dict(fill=BLACK, tipc=BLACK, edge=c, band=band, band_at=0.5, band_w=3.4, sw=1.3,
+                      bulge=0.17)
+            b = plump_ear((10, T + 3), (25, T + 3), (2, 1), "l", **kw)
+            b += plump_ear((35, T + 3), (50, T + 3), (60, 2), "r", **kw)
+            return svg(64, T + 3, b)
+
+        return [("ears", 64, T + 3, "tl", 0, 0, ears)]
 
     def emblem(self, s, state):
         """Line-art Poke Ball, as dotted along the wallpaper's chevrons."""

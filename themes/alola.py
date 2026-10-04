@@ -213,3 +213,35 @@ class Alola(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: Solgaleo's sun rays fanning up behind the emblem, Lunala's crescent hanging off the right side ----
+
+    SHAPE = dict(top=22, right=22)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def rays(active):
+            import math
+            gold, light = (GOLD, GOLD_LT) if active else ("#4a4670", "#6a6690")
+            cx, cy = 16, T + 3
+            b = ""
+            for i in range(9):
+                a = math.radians(180 + 10 + i * 20)
+                tip = 22 if i % 2 == 0 else 15
+                x1, y1 = cx + 6 * math.cos(a - 0.22), cy + 6 * math.sin(a - 0.22)
+                x2, y2 = cx + 6 * math.cos(a + 0.22), cy + 6 * math.sin(a + 0.22)
+                b += path(f"M{x1:.1f},{y1:.1f} L{cx + tip * math.cos(a):.1f},{cy + tip * math.sin(a):.1f} L{x2:.1f},{y2:.1f} Z",
+                          fill=gold if i % 2 == 0 else light)
+            return svg(40, T + 3, b)
+
+        def moon(active):
+            from themes._common import crescent
+            c = LAVENDER if active else "#3a3866"
+            return svg(27, 30, crescent(12, 15, 12, c, 0.5, 0) + (sparkle(22, 5, 2.4, GOLD_LT) if active else ""))
+
+        return [("rays", 40, T + 3, "tl", 0, 0, rays),
+                ("moon", 27, 30, "tr", 0, T + 10, moon)]

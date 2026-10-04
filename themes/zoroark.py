@@ -81,3 +81,28 @@ class Zoroark(Kit):
 
     def menu_tile(self, w, h):
         return rect(0, 0, w, h, FUR_DK) + halftone(w, h, "#2e2650")
+
+
+    # ---- shape: its crimson mane sweeping back over the top of the window ----
+
+    SHAPE = dict(top=32)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def hair(active):
+            m, md, t = (MANE, MANE_DK, TEAL) if active else ("#4a3a48", "#3a2e3a", "#4a5a64")
+            # Zoroark's mane: three thick locks rising from the title bar and
+            # sweeping back to the right, each ending in a teal bead
+            b = ""
+            for x0, w, tip, col in ((4, 16, (60, 4), md), (12, 18, (78, 10), m), (2, 14, (44, 14), m)):
+                tx, ty = tip
+                d = (f"M{x0},{T + 3} C{x0 - 2},{T - 18} {tx - 34},{ty - 6} {tx},{ty} "
+                     f"C{tx - 8},{ty + 16} {x0 + w + 14},{T - 2} {x0 + w},{T + 3} Z")
+                b += path(d, fill=col, stroke=FUR_DK, sw=1.2)
+                b += circle(tx - 1, ty + 1, 3.4, t, FUR_DK, 0.8)
+            return svg(84, T + 3, b)
+
+        return [("mane", 84, T + 3, "tl", 0, 0, hair)]

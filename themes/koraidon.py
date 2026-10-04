@@ -82,6 +82,37 @@ class Koraidon(Art):
         "border: 0 0 0 4px; border-color: #f3eef3; border-radius: 3px;"))
     MATTE = dict(title=CRIMSON, menu=MAROON_DK, dialog=MAROON_DK, popup=BONE)
 
+    # ---- shape: Koraidon's feather crest fanning up above the title bar ---------
+
+    SHAPE = dict(top=30)
+
+    def decorations(self):
+        T = self.SHAPE["top"]
+
+        def crest(active):
+            # four swept-back feathers: white quill, blue vane fading to magenta/pink,
+            # rooted on the title bar's top edge behind the emblem
+            if active:
+                vane = (f'<linearGradient id="v" x1="0" y1="1" x2="0" y2="0">'
+                        f'<stop offset="0" stop-color="{BLUE}"/><stop offset="0.55" stop-color="{BLUE_HI}"/>'
+                        f'<stop offset="0.8" stop-color="{MAGENTA}"/><stop offset="1" stop-color="{PINK}"/>'
+                        f'</linearGradient>')
+                fill, quill, edge = "url(#v)", BONE, MAROON_XDK
+            else:
+                vane, fill, quill, edge = "", MUTED_BAND, "#8a7a88", MAROON_XDK
+            b = vane
+            for root, tip, w in ((8, (2, 6), 6), (16, (14, 1), 7), (26, (30, 3), 7), (36, (50, 10), 6)):
+                tx, ty = tip
+                # a curved blade: up the left edge to the tip, back down the right
+                d = (f"M{root - w / 2},{T + 3} C{root - w},{T - 10} {tx - 2},{ty + 12} {tx},{ty} "
+                     f"C{tx + 4},{ty + 12} {root + w},{T - 8} {root + w / 2},{T + 3} Z")
+                b += path(d, fill=fill, stroke=edge, sw=1.1)
+                b += path(f"M{root},{T + 3} C{root},{T - 8} {tx + 1},{ty + 14} {tx + 0.5},{ty + 4}",
+                          stroke=quill, sw=1)
+            return svg(56, T + 3, b)
+
+        return [("crest", 56, T + 3, "tl", 0, 0, crest)]
+
     # ---- window borders -----------------------------------------------------
 
     def _title_bg(self, w, active, dy=0):

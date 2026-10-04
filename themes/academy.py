@@ -74,3 +74,22 @@ class Academy(Kit):
 
     def menu_tile(self, w, h):
         return rect(0, 0, w, h, self.MENU_BG) + starfield(w, h, 18, 6, [CRYSTAL, "#ffffff", ORANGE], 0.7)
+
+
+    # ---- shape: a Terastal crystal crown rising off the top-left corner ----
+
+    SHAPE = dict(top=26)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def crown(active):
+            fill, edge = (CRYSTAL, "#ffffff") if active else ("#3a3a48", "#5a5a6a")
+            b = tera(10, T - 8, 9, fill, edge) + tera(30, T - 13, 13, fill, edge) + tera(48, T - 6, 8, fill, edge)
+            if active:
+                b += sparkle(40, 4, 3, "#ffffff") + sparkle(4, 10, 2, ORANGE)
+            return svg(58, T + 3, b)
+
+        return [("crown", 58, T + 3, "tl", 0, 0, crown)]

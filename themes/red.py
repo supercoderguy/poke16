@@ -254,3 +254,35 @@ class Red(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: a manga impact burst behind the emblem, speed lines streaking off the left side ----
+
+    SHAPE = dict(top=22, left=26)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def burst(active):
+            import math
+            k = (lambda c: c) if active else (lambda c: mute(c, "#c8c8c4", 0.5))
+            pts = []
+            for i in range(22):
+                r = 28 if i % 2 == 0 else (13 if i % 4 == 1 else 17)
+                a = math.radians(180 + i * 180 / 21)
+                pts.append(f"{34 + r * math.cos(a):.1f},{T + 3 + r * math.sin(a):.1f}")
+            b = path("M" + " L".join(pts) + " Z", fill=k(PAPER), stroke=k(INK), sw=2)
+            b += pokeball(34, T - 5, 7, k(RED), k(INK), k(PAPER), 1.3)
+            return svg(68, T + 3, b)
+
+        def lines(active):
+            c = INK if active else TONE
+            b = ""
+            for y, L in ((6, 24), (13, 17), (20, 27), (27, 13), (34, 21), (41, 15)):
+                b += path(f"M{31 - L},{y} L31,{y}", stroke=c, sw=2.2 if L > 20 else 1.4)
+            return svg(31, 46, b)
+
+        return [("burst", 68, T + 3, "tl", 26, 0, burst),
+                ("lines", 31, 46, "tl", 0, T + 30, lines)]

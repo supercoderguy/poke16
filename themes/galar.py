@@ -74,3 +74,27 @@ class Galar(Kit):
 
     def menu_tile(self, w, h):
         return rect(0, 0, w, h, self.MENU_BG) + sparkle(6, 7, 2.5, "#2a3a70") + sparkle(18, 17, 2, "#2a3a70")
+
+
+    # ---- shape: Zacian's sword rising from the top, Zamazenta's shield on the left side ----
+
+    SHAPE = dict(top=30, left=24)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def blade(active):
+            b, e, g = (GOLD, STEEL, ZAMA) if active else ("#5a5a54", STEEL, "#4a3a3e")
+            # an upright sword: blade from the title bar up to a point, red crossguard near the base
+            s = path(f"M12,{T + 3} L12,8 L16,0 L20,8 L20,{T + 3} Z", fill=b, stroke=e, sw=1)
+            s += rect(5, T - 6, 22, 5, g, e, 0.8) + rect(14, T - 1, 4, 4, g)
+            return svg(32, T + 3, s)
+
+        def guard(active):
+            fill, rim = (ZAMA, GOLD) if active else ("#4a3a3e", "#5a5a54")
+            return svg(29, 32, shield(14, 15, 13, fill, rim))
+
+        return [("sword", 32, T + 3, "tl", 50, 0, blade),
+                ("shield", 29, 32, "tl", 0, T + 14, guard)]

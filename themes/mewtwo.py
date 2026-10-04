@@ -70,3 +70,27 @@ class Mewtwo(Kit):
 
     def menu_tile(self, w, h):
         return rect(0, 0, w, h, SPACE) + starfield(w, h, 20, 9, ["#ffffff", PALE_DK, PSY], 0.8)
+
+
+    # ---- shape: its blunt head horns above the title bar, the purple tail curling out of the right side ----
+
+    SHAPE = dict(top=18, right=30)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def horns(active):
+            fill, edge = (PALE, PURPLE_DK) if active else ("#4a4858", "#2e2c38")
+            kw = dict(fill=fill, tipc=fill, edge=edge, bulge=0.3, sw=1.3)
+            b = plump_ear((6, T + 3), (18, T + 3), (6, 3), "l", **kw) + plump_ear((26, T + 3), (38, T + 3), (38, 3), "r", **kw)
+            return svg(44, T + 3, b)
+
+        def tail(active):
+            c, e = (PURPLE, PURPLE_DK) if active else ("#3a3846", "#2e2c38")
+            d = "M0,8 C18,6 30,18 28,32 C26,44 12,46 10,38 C9,32 16,30 18,34"
+            return svg(35, 50, path(d, stroke=e, sw=9) + path(d, stroke=c, sw=6))
+
+        return [("horns", 44, T + 3, "tl", 14, 0, horns),
+                ("tail", 35, 50, "tr", 0, T + 30, tail)]

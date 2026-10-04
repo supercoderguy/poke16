@@ -12,4 +12,4 @@ if [ -n "$artist" ]; then
     printf '%s – %s\n' "$artist" "$title"
 else
     printf '%s\n' "$title"
-fi | cut -c1-45
+fi | cut -c1-60

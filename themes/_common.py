@@ -81,3 +81,43 @@ def starfield(w, h, seed, n, colours, rmax=0.9):
 
 def diamond(cx, cy, rx, ry, fill, stroke=None, sw=1):
     return path(f"M{cx},{cy - ry} L{cx + rx},{cy} L{cx},{cy + ry} L{cx - rx},{cy} Z", fill=fill, stroke=stroke, sw=sw)
+
+
+def plump_ear(b1, b2, tip, uid, fill="#ffe200", tipc="#221e07", edge="#221e07", tip_len=0.4, bulge=0.28,
+              sw=1.4, band=None, band_at=0.55, band_w=3):
+    """A rounded, leaf-shaped ear from base b1..b2 to tip, coloured `tipc` near the
+    tip; `band` adds a ring of that colour across the ear (Umbreon's gold rings)."""
+    import math
+    (x1, y1), (x2, y2), (tx, ty) = b1, b2, tip
+
+    def ctrl(ax, ay, t, side):
+        # a point t of the way from (ax, ay) to the tip, pushed outward by `bulge`
+        dx, dy = tx - ax, ty - ay
+        n = math.hypot(dx, dy)
+        return ax + dx * t + side * -dy / n * n * bulge, ay + dy * t + side * dx / n * n * bulge
+
+    side1 = 1 if (x2 - x1) * (ty - y1) - (y2 - y1) * (tx - x1) > 0 else -1
+    a1, a2 = ctrl(x1, y1, 0.35, side1), ctrl(x1, y1, 0.8, side1 * 0.4)
+    c1, c2 = ctrl(x2, y2, 0.8, -side1 * 0.4), ctrl(x2, y2, 0.35, -side1)
+    d = (f"M{x1},{y1} C{a1[0]:.1f},{a1[1]:.1f} {a2[0]:.1f},{a2[1]:.1f} {tx},{ty} "
+         f"C{c1[0]:.1f},{c1[1]:.1f} {c2[0]:.1f},{c2[1]:.1f} {x2},{y2} Z")
+    r = math.hypot(tx - (x1 + x2) / 2, ty - (y1 + y2) / 2) * tip_len
+    out = (f'<clipPath id="tip{uid}"><path d="{d}"/></clipPath>' + path(d, fill=fill)
+           + f'<circle cx="{tx}" cy="{ty}" r="{r:.1f}" fill="{tipc}" clip-path="url(#tip{uid})"/>')
+    if band:
+        rb = math.hypot(tx - (x1 + x2) / 2, ty - (y1 + y2) / 2) * band_at
+        out += (f'<circle cx="{tx}" cy="{ty}" r="{rb:.1f}" fill="none" stroke="{band}" '
+                f'stroke-width="{band_w}" clip-path="url(#tip{uid})"/>')
+    return out + path(d, stroke=edge, sw=sw)
+
+
+def mute(colour, toward="#6a6a6a", t=0.6):
+    """A colour faded towards a grey: decorations on unfocused windows."""
+    a = [int(colour.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    b = [int(toward.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    return "#" + "".join(f"{round(x + (y - x) * t):02x}" for x, y in zip(a, b))
+
+
+def mirror(w, body):
+    """Flip a w-wide drawing left-to-right (a left-side decoration for the right side)."""
+    return f'<g transform="translate({w},0) scale(-1,1)">{body}</g>'

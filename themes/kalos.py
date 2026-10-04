@@ -253,3 +253,38 @@ class Kalos(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: Xerneas' rainbow-gemmed antlers on top, Yveltal's wing out of the right side ----
+
+    SHAPE = dict(top=30, right=30)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def antlers(active):
+            c = ANTLER if active else "#6a6a70"
+            gems = GEMS if active else ["#7a7a84"] * len(GEMS)
+            b = ""
+            for base, branches in ((14, ((14, 18, 6, 4), (12, 12, 2, 14), (13, 22, 24, 10))),
+                                   (34, ((34, 18, 40, 4), (36, 12, 46, 12), (35, 22, 28, 9)))):
+                b += path(f"M{base},{T + 3} L{base},{T - 8}", stroke=c, sw=2.6)
+                for i, (x1, y1, x2, y2) in enumerate(branches):
+                    b += path(f"M{x1},{y1 + T - 30} Q{(x1 + x2) / 2 + 3},{(y1 + y2) / 2 + T - 32} {x2},{y2 + T - 30}",
+                              stroke=c, sw=2)
+                    b += f'<ellipse cx="{x2}" cy="{y2 + T - 30}" rx="2.6" ry="1.9" fill="{gems[(i + base) % len(gems)]}"/>'
+            return svg(50, T + 3, b)
+
+        def wing(active):
+            body, edge = (CRIMSON, YV_DK) if active else ("#4a3a44", "#2a2030")
+            b = ""
+            for y, reach, rise in ((4, 33, 0), (22, 30, -2), (40, 24, -4)):
+                d = f"M0,{y} L0,{y + 14} L{reach},{y + rise + 2} L{reach - 9},{y + rise + 6} Z"
+                b += path(d, fill=body, stroke=edge, sw=1.3)
+                b += path(f"M2,{y + 7} L{reach - 4},{y + rise + 3}", stroke=edge, sw=1)
+            return svg(35, 58, b)
+
+        return [("antlers", 50, T + 3, "tl", 0, 0, antlers),
+                ("wing", 35, 58, "tr", 0, T + 6, wing)]

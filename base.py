@@ -141,6 +141,19 @@ class Art:
         return dict(title=p["panel"], menu=p["panel"], dialog=p["base"], popup=p["panel"])
 
     TITLE_JUSTIFY = 512       # 0 left, 512 centre, 1024 right
+
+    # Non-rectangular windows.  SHAPE adds transparent margins round the normal
+    # frame, dict(top=, left=, right=, bottom=) in px; decorations() then draws
+    # things into them (ears, wings, tails...).  e16 cuts the window to the
+    # opaque pixels, so the rest of each margin is see- and click-through.
+    SHAPE = None
+    SHAPED_BORDERS = ("DEFAULT", "FIXED_SIZE", "TRANSIENT", "DIALOG")
+
+    def decorations(self):
+        """[(name, w, h, anchor, x, y, draw)]: a w*h image drawn by draw(active)
+        and pinned to a frame corner - anchor tl|tr|bl|br, x/y measured inwards
+        from that corner of the whole (margin-included) frame."""
+        return []
     MENU_BG_TILE = 0          # >0: menu_bg is drawn at this size and tiled
     TEXT_EFFECT = "__EFFECT_NONE"
 
@@ -323,6 +336,21 @@ def region(x1p, x1, y1p, y1, x2p, x2, y2p, y2):
     return f"BORDER_PART_REGION(-1, {x1p}, {x1}, {y1p}, {y1}, -1, {x2p}, {x2}, {y2p}, {y2})"
 
 
+def _harden(png, edge):
+    """For shaped border images: e16 cuts the window at alpha 50% and blends any
+    remaining partial alpha against white.  So flatten the colours onto `edge`
+    (softened edges then fade into the outline colour, not white) and make the
+    alpha strictly 0/255."""
+    tmp = png.with_suffix(".tmp.png")
+    subprocess.run([
+        "ffmpeg", "-loglevel", "error", "-y", "-i", str(png), "-filter_complex",
+        f"[0]split[c][a];[c]format=rgba[c2];color=c={edge}:s=8x8[bg];[bg][c2]scale2ref[bg2][c3];"
+        f"[bg2][c3]overlay=format=auto,format=rgb24[rgb];"
+        f"[a]alphaextract,lut=y='if(gte(val,128),255,0)'[m];[rgb][m]alphamerge",
+        "-frames:v", "1", "-update", "1", str(tmp)], check=True)
+    tmp.replace(png)
+
+
 class Builder:
     def __init__(self, art: Art):
         self.a = art
@@ -331,10 +359,11 @@ class Builder:
         self.svgdir = ROOT / "build" / ".svg" / art.NAME
         self.jobs = {}                      # rel png path -> svg source
         self.files = {}                     # cfg name -> text
+        self.shaped = {}                    # rel png path -> edge colour (see _harden)
 
     # -- image registration -------------------------------------------------
 
-    def png(self, rel, svgsrc, matte=None, crisp=False):
+    def png(self, rel, svgsrc, matte=None, crisp=False, shaped=None):
         """e16 blends partial alpha against white, so anything drawn over
         something else is flattened onto a matte colour; shaped popups use
         crisp (un-antialiased) edges so their mask stays clean."""
@@ -346,6 +375,8 @@ class Builder:
         if matte:
             body = f'<rect width="100%" height="100%" fill="{matte}"/>' + body
         self.jobs[rel] = head + "</defs>" + body + "</svg>"
+        if shaped:
+            self.shaped[rel] = shaped
         return f'"{rel}"'
 
     def render(self):
@@ -358,6 +389,8 @@ class Builder:
             dst = self.e16 / rel
             dst.parent.mkdir(parents=True, exist_ok=True)
             subprocess.run(["rsvg-convert", "-o", str(dst), str(s)], check=True)
+            if rel in self.shaped:
+                _harden(dst, self.shaped[rel])
 
         with ThreadPoolExecutor(8) as ex:
             list(ex.map(one, self.jobs.items()))
@@ -440,6 +473,12 @@ class Builder:
         img.append(self.image("BOTTOM", [
             ("NORMAL", self.png("border/bottom", a.bottom(64, BB, False)), (8, 8, 0, 0)),
             ("NORMAL_ACTIVE", self.png("border/bottom_a", a.bottom(64, BB, True)), (8, 8, 0, 0))]))
+
+        edge = a.P["shadow"]
+        for name, w, h, _anchor, _x, _y, draw in a.decorations():
+            img.append(self.image(f"DECO_{name}", [
+                ("NORMAL", self.png(f"border/deco_{name}", draw(False), shaped=edge), (0, 0, 0, 0)),
+                ("NORMAL_ACTIVE", self.png(f"border/deco_{name}_a", draw(True), shaped=edge), (0, 0, 0, 0))]))
 
         MTH = M["menu_title_h"]
         img.append(self.image("MENU_TITLE", [
@@ -638,12 +677,17 @@ class Builder:
     # -- border geometry -----------------------------------------------------
 
     def border(self, name, buttons, frame=True, menu=False):
-        M = self.a.M
+        a, M = self.a, self.a.M
         TH = M["menu_title_h"] if menu else M["title_h"]
         SW, BB, C, BS = M["side"], M["bottom"], M["corner"], M["btn"]
         if not frame:
             SW = BB = 0
-        o = [f"BEGIN_BORDER({name}, {SW}, {SW}, {TH}, {BB})", "  BORDER_SHADE_DIRECTION(__UP)"]
+        shaped = bool(a.SHAPE) and name in a.SHAPED_BORDERS and frame and not menu
+        X = {"top": 0, "left": 0, "right": 0, "bottom": 0, **(a.SHAPE if shaped else {})}
+        T, L, R, B = X["top"], X["left"], X["right"], X["bottom"]
+        o = [f"BEGIN_BORDER({name}, {SW + L}, {SW + R}, {TH + T}, {BB + B})", "  BORDER_SHADE_DIRECTION(__UP)"]
+        if shaped:
+            o.append("  BORDER_CHANGES_SHAPE")
 
         def part(iclass, w, h, reg, action=None, cursor=None, title=None, shaded=True, top=False):
             o.append(f"  BEGIN_BORDER_PART({iclass}, {w[0]}, {w[1]}, {h[0]}, {h[1]})")
@@ -664,26 +708,33 @@ class Builder:
             part("MENU_TITLE", (0, big), (TH, TH), region(0, 0, 0, 0, 1024, -1, 0, TH - 1),
                  "ACTION_MOVE", "MOVE", "MENU_TITLE")
         else:
-            part("EMBLEM", (TH, TH), (TH, TH), region(0, 0, 0, 0, 0, TH - 1, 0, TH - 1), "ACTION_MENU")
-            part(f"TITLE_{len(buttons)}", (0, big), (TH, TH), region(0, TH, 0, 0, 1024, -1, 0, TH - 1),
+            part("EMBLEM", (TH, TH), (TH, TH), region(0, L, 0, T, 0, L + TH - 1, 0, T + TH - 1), "ACTION_MENU")
+            part(f"TITLE_{len(buttons)}", (0, big), (TH, TH), region(0, L + TH, 0, T, 1024, -R - 1, 0, T + TH - 1),
                  "ACTION_MOVE", "MOVE", "TITLE")
-            by = (TH - BS) // 2
-            x2 = -M["btn_right"]
+            by = T + (TH - BS) // 2
+            x2 = -R - M["btn_right"]
             for kind in reversed(buttons):
                 part(BUTTON_ICLASS[kind], (BS, BS), (BS, BS),
                      region(1024, x2 - BS, 0, by, 1024, x2 - 1, 0, by + BS - 1),
                      BUTTON_ACTIONS[kind], top=True)
                 x2 -= BS + M["btn_gap"]
         if frame:
-            part("SIDE_L", (SW, SW), (0, big), region(0, 0, 0, TH, 0, SW - 1, 1024, -BB - 1),
+            part("SIDE_L", (SW, SW), (0, big), region(0, L, 0, T + TH, 0, L + SW - 1, 1024, -B - BB - 1),
                  "ACTION_RESIZE_H", "RESIZE_H", shaded=False)
-            part("SIDE_R", (SW, SW), (0, big), region(1024, -SW, 0, TH, 1024, -1, 1024, -BB - 1),
+            part("SIDE_R", (SW, SW), (0, big), region(1024, -R - SW, 0, T + TH, 1024, -R - 1, 1024, -B - BB - 1),
                  "ACTION_RESIZE_H", "RESIZE_H", shaded=False)
-            part("BOTTOM", (0, big), (BB, BB), region(0, C, 1024, -BB, 1024, -C - 1, 1024, -1),
+            part("BOTTOM", (0, big), (BB, BB), region(0, L + C, 1024, -B - BB, 1024, -R - C - 1, 1024, -B - 1),
                  "ACTION_RESIZE_V", "RESIZE_V", shaded=False)
-            part("CORNER_L", (C, C), (BB, BB), region(0, 0, 1024, -BB, 0, C - 1, 1024, -1),
+            part("CORNER_L", (C, C), (BB, BB), region(0, L, 1024, -B - BB, 0, L + C - 1, 1024, -B - 1),
                  "ACTION_RESIZE", "RESIZE_BL", shaded=False)
-            part("CORNER_R", (C, C), (BB, BB), region(1024, -C, 1024, -BB, 1024, -1, 1024, -1),
+            part("CORNER_R", (C, C), (BB, BB), region(1024, -R - C, 1024, -B - BB, 1024, -R - 1, 1024, -B - 1),
                  "ACTION_RESIZE", "RESIZE_BR", shaded=False)
+        if shaped:
+            # decorations go last so they paint over the frame they overlap
+            for dname, w, h, anchor, x, y, _draw in a.decorations():
+                xp, x1, x2 = (0, x, x + w - 1) if anchor[1] == "l" else (1024, -x - w, -x - 1)
+                yp, y1, y2 = (0, y, y + h - 1) if anchor[0] == "t" else (1024, -y - h, -y - 1)
+                part(f"DECO_{dname}", (w, w), (h, h), region(xp, x1, yp, y1, xp, x2, yp, y2),
+                     "ACTION_MOVE", "MOVE", shaded=anchor[0] == "t", top=True)
         o.append("END_BORDER")
         return "\n".join(o)

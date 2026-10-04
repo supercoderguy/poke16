@@ -77,3 +77,29 @@ class Paldea(Kit):
         # the Mesagoza tiled floor, faintly
         return (rect(0, 0, w, h, CREAM) + rect(0, 0, w / 2, h / 2, TILE_A, extra='opacity="0.25"')
                 + rect(w / 2, h / 2, w / 2, h / 2, TILE_B, extra='opacity="0.25"'))
+
+
+    # ---- shape: the three starters peeking over the title bar: Sprigatito's ears, Fuecoco's flame, Quaxly's crest ----
+
+    SHAPE = dict(top=22)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def starters(active):
+            k = (lambda c: c) if active else (lambda c: mute(c, "#dcb2a6", 0.6))
+            kw = dict(edge=k(INK), sw=1.2, bulge=0.2)
+            # Sprigatito: two little green ears
+            b = plump_ear((2, T + 3), (12, T + 3), (3, 6), "s1", fill=k(SPRIG), tipc=k("#3a7a2a"), **kw)
+            b += plump_ear((14, T + 3), (24, T + 3), (22, 6), "s2", fill=k(SPRIG), tipc=k("#3a7a2a"), **kw)
+            # Fuecoco: the flame on its head
+            b += path(f"M34,{T + 3} C30,{T - 6} 36,12 38,4 C40,10 46,{T - 8} 44,{T + 3} Z", fill=k(FUECO), stroke=k(INK), sw=1.2)
+            b += path(f"M37,{T + 3} C35,{T - 4} 38,{T - 10} 39,{T - 14} C40,{T - 8} 42,{T - 4} 41,{T + 3} Z", fill=k(YELLOW))
+            # Quaxly: its blue wave crest
+            b += path(f"M52,{T + 3} C50,{T - 8} 58,6 68,8 C62,10 60,14 64,16 C58,16 58,{T - 4} 62,{T + 3} Z",
+                      fill=k(QUAX), stroke=k(INK), sw=1.2)
+            return svg(70, T + 3, b)
+
+        return [("starters", 70, T + 3, "tl", 4, 0, starters)]

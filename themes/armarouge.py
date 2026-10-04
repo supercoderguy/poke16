@@ -259,3 +259,22 @@ class Armarouge(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: psychic flames rising off the helm above the title bar ----
+
+    SHAPE = dict(top=34)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def flames(active):
+            if active:
+                b = flame(26, 12, 1.25) + flame(2, 2, 1.75)
+            else:
+                b = flame(26, 12, 1.25, "#9aa6ae", "#c8d0d6", "#6a7680") + flame(2, 2, 1.75, "#9aa6ae", "#c8d0d6", "#6a7680")
+            return svg(52, T + 3, b, FLAME_GRAD)
+
+        return [("flames", 52, T + 3, "tl", 4, 0, flames)]

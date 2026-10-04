@@ -235,3 +235,30 @@ class Mimikyu(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: the disguise's floppy ear on top, its wooden tail out of the right side ----
+
+    SHAPE = dict(top=26, right=20)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def ear(active):
+            fill, edge = (CLOTH, INK) if active else (SHADE, SHADE_DK)
+            # the drawn-on Pikachu ear: rises, then flops over at the tip
+            d = (f"M8,{T + 3} C10,{T - 10} 16,8 26,3 C32,0 40,2 46,10 C40,8 34,9 30,13 "
+                 f"C26,18 30,{T - 6} 34,{T + 3} Z")
+            b = path(d, fill=fill, stroke=edge, sw=1.3)
+            b += path("M46,10 C40,8 34,9 30,13 C34,10 40,9 46,10 Z", fill=edge)   # the scribbled black tip
+            return svg(48, T + 3, b)
+
+        def tail(active):
+            fill, edge = (TAIL, BARK_DK) if active else (SHADE_DK, BARK_DK)
+            d = "M0,22 L10,18 L6,12 L18,6 L15,1 L25,0 L22,9 L13,12 L17,18 L5,26 L0,30 Z"
+            return svg(25, 31, path(d, fill=fill, stroke=edge, sw=1.1))
+
+        return [("ear", 48, T + 3, "tl", 4, 0, ear),
+                ("tail", 25, 31, "tr", 0, T + 60, tail)]

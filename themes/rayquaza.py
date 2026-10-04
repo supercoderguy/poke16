@@ -225,3 +225,32 @@ class Rayquaza(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: its head fin sweeping up off the title bar and body fins out of the right side ----
+
+    SHAPE = dict(top=24, right=26)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def headfin(active):
+            body, ring, edge = (RAY, YELLOW, BLACK) if active else (DIM, DIM_Y, BLACK)
+            d = f"M6,{T + 3} C10,{T - 8} 18,6 46,1 C34,8 28,{T - 6} 30,{T + 3} Z"
+            b = path(d, fill=body, stroke=edge, sw=1.3)
+            b += path(f"M14,{T - 2} C20,14 30,8 40,4", stroke=ring, sw=1.8)
+            return svg(48, T + 3, b)
+
+        def fins(active):
+            body, ring, edge = (RAY, YELLOW, BLACK) if active else (DIM, DIM_Y, BLACK)
+            b = ""
+            for y, reach in ((2, 30), (30, 24)):
+                d = f"M0,{y} L0,{y + 16} L{reach - 8},{y + 10} L{reach},{y} L{reach - 10},{y + 4} Z"
+                b += path(d, fill=body, stroke=edge, sw=1.2)
+                b += path(f"M3,{y + 8} L{reach - 10},{y + 6}", stroke=ring, sw=1.5)
+            return svg(31, 48, b)
+
+        return [("headfin", 48, T + 3, "tl", 2, 0, headfin),
+                ("fins", 31, 48, "tr", 0, T + 12, fins)]

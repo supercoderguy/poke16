@@ -77,3 +77,29 @@ class Darkrai(Kit):
         # Darkrai's smoke: soft dark patches
         return (rect(0, 0, w, h, self.MENU_BG) + circle(6, 6, 7, "#1e1e22", extra='opacity="0.7"')
                 + circle(18, 18, 6, "#1c1c20", extra='opacity="0.7"'))
+
+
+    # ---- shape: its white smoke plume streaming off the top, red collar spikes out of the left side ----
+
+    SHAPE = dict(top=28, left=18)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def plume(active):
+            fill, edge = (PLUME, GREY) if active else (SMOKE_LT, "#2a2a2c")
+            d = (f"M6,{T + 3} C4,{T - 10} 12,10 24,6 C34,3 42,8 52,2 C48,10 40,14 32,15 "
+                 f"C40,16 46,20 50,24 C40,22 32,{T - 2} 30,{T + 3} Z")
+            return svg(54, T + 3, path(d, fill=fill, stroke=edge, sw=1.2))
+
+        def spikes(active):
+            fill, edge = (RED, INK) if active else ("#3a2a2c", INK)
+            b = ""
+            for y in (2, 16, 30):
+                b += path(f"M23,{y} L23,{y + 11} L0,{y + 5} Z", fill=fill, stroke=edge, sw=1)
+            return svg(23, 44, b)
+
+        return [("plume", 54, T + 3, "tl", 18, 0, plume),
+                ("spikes", 23, 44, "tl", 0, T + 6, spikes)]

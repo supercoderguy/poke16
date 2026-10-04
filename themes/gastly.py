@@ -222,3 +222,26 @@ class Gastly(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: gas puffing off the top and out of the right side ----
+
+    SHAPE = dict(top=18, right=20)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def top(active):
+            fill, edge = (GAS, EDGE) if active else (DIM, "#6a5a7a")
+            blobs = [(8, T + 3, 7), (19, T - 3, 8), (31, T + 1, 6), (41, T - 5, 6), (50, T + 1, 4), (57, T - 3, 3)]
+            return svg(62, T + 3, gas_blobs(blobs, fill, edge, 1.3))
+
+        def side(active):
+            fill, edge = (GAS, EDGE) if active else (DIM, "#6a5a7a")
+            blobs = [(2, 8, 7), (11, 12, 6), (18, 6, 4), (4, 24, 8), (14, 29, 6), (21, 34, 3), (3, 42, 6), (11, 48, 4)]
+            return svg(25, 56, gas_blobs(blobs, fill, edge, 1.3))
+
+        return [("puffs", 62, T + 3, "tl", 0, 0, top),
+                ("side", 25, 56, "tr", 0, T + 10, side)]

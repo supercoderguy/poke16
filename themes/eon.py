@@ -74,3 +74,25 @@ class Eon(Kit):
     def menu_tile(self, w, h):
         # Alto Mare's lamplight on the water
         return rect(0, 0, w, h, self.MENU_BG) + starfield(w, h, 19, 6, [GLOW, LAMP, "#ffffff"], 0.8)
+
+
+    # ---- shape: jet wings out of both sides - Latios blue on the left, Latias red on the right ----
+
+    SHAPE = dict(left=26, right=26)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        W, H = 31, 40
+
+        def wing(body, active):
+            k = (lambda c: c) if active else (lambda c: mute(c, "#2a3040", 0.6))
+            d = f"M{W},2 L{W},26 L12,22 L0,30 L4,16 Z"
+            b = path(d, fill=k(body), stroke=k(TRIM), sw=1.3)
+            b += path(f"M{W - 2},14 L10,15", stroke=k(TRIM), sw=1.2)
+            return b
+
+        return [("wing_l", W, H, "tl", 0, 40, lambda a: svg(W, H, wing(LATIOS, a))),
+                ("wing_r", W, H, "tr", 0, 40, lambda a: svg(W, H, mirror(W, wing(LATIAS, a))))]

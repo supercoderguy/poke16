@@ -224,3 +224,34 @@ class Lucario(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: its pointed ears above the title bar and paw spikes out of both sides ----
+
+    SHAPE = dict(top=28, left=14, right=14)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def ears(active):
+            fill, inner, edge = (BLUE, BLACK, BLACK) if active else (DIM, DIM_DK, "#3a3c44")
+            kw = dict(fill=fill, tipc=fill, edge=edge, bulge=0.12, sw=1.3)
+            b = plump_ear((8, T + 3), (22, T + 3), (4, 1), "l", **kw)
+            b += plump_ear((30, T + 3), (44, T + 3), (50, 2), "r", **kw)
+            b += path(f"M11,{T + 2} L6,6 L17,{T + 2} Z", fill=inner)      # the black inside of each ear
+            b += path(f"M41,{T + 2} L48,7 L35,{T + 2} Z", fill=inner)
+            return svg(54, T + 3, b)
+
+        def spike_l(active):
+            c, e = (SPIKE, BLACK) if active else ("#4a4e58", "#2a2c34")
+            return svg(19, 16, path("M19,1 L19,15 L0,8 Z", fill=c, stroke=e, sw=1.1))
+
+        def spike_r(active):
+            c, e = (SPIKE, BLACK) if active else ("#4a4e58", "#2a2c34")
+            return svg(19, 16, mirror(19, path("M19,1 L19,15 L0,8 Z", fill=c, stroke=e, sw=1.1)))
+
+        return [("ears", 54, T + 3, "tl", 14, 0, ears),
+                ("spike_l", 19, 16, "tl", 0, T + 40, spike_l),
+                ("spike_r", 19, 16, "tr", 0, T + 40, spike_r)]

@@ -68,3 +68,19 @@ class Cyndaquil(Kit):
 
     def bubble_art(self, s, i):
         return circle(s / 2, s / 2, s / 2 - 0.5, [FLAME, ORANGE, RED, SUN][i - 1])
+
+
+    # ---- shape: its back flames erupting along the top of the title bar ----
+
+    SHAPE = dict(top=26)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def fire(active):
+            outer, inner = (RED, FLAME) if active else ("#4a3a3a", "#6a5a4a")
+            return svg(48, T + 3, flames(0, T + 3 - 12 * 2.2, 2.2, outer, inner))
+
+        return [("flames", 48, T + 3, "tl", 4, 0, fire)]

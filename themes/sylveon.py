@@ -267,3 +267,29 @@ class Sylveon(Art):
 
     def startup_bar(self, w, h):
         return self.dragbar(w, h, False)
+
+
+    # ---- shape: ribbon feelers trailing out of the right side, a bow on top ----
+
+    SHAPE = dict(top=14, right=32)
+
+    def decorations(self):
+        from base import circle, path, rect, svg
+        from themes._common import mirror, mute, plump_ear
+        T, SW = self.SHAPE.get("top", 0), self.M["side"]
+
+        def ribbons(active):
+            k = (lambda c: c) if active else (lambda c: mute(c, "#c3cfdc", 0.55))
+            b = ""
+            for d, tip in (("M1,10 C14,2 22,24 33,14", PINK_MID), ("M1,26 C10,36 20,30 22,46 C23,54 30,58 34,54", SKY)):
+                b += path(d, stroke=k(MAUVE), sw=7.5) + path(d, stroke=k(WHITE), sw=5)
+                b += path(d, stroke=k(tip), sw=5, extra='stroke-dasharray="6 200" stroke-dashoffset="-200"')
+            b += circle(33, 14, 3.2, k(PINK_MID), k(MAUVE), 1) + circle(34, 54, 3.2, k(SKY), k(MAUVE), 1)
+            return svg(37, 60, b)
+
+        def topbow(active):
+            k = (lambda c: c) if active else (lambda c: mute(c, "#c3cfdc", 0.55))
+            return svg(34, T + 3, bow(17, T - 3, 1.35, k(ROSE), k(WHITE), k(MAUVE)))
+
+        return [("ribbons", 37, 60, "tr", 0, T + 8, ribbons),
+                ("bow", 34, T + 3, "tl", 6, 0, topbow)]

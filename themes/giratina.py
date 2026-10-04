@@ -1,7 +1,7 @@
 """Giratina: the Distortion World - rust-red cavern, Giratina's black/red striped wings,
 gold crown and spikes, the Origin trio of Palkia pink and Dialga steel blue."""
 
-from base import circle, path, rect
+from base import circle, path, rect, svg
 from themes._kit import Kit
 
 CAVE = "#4c1616"
@@ -55,6 +55,35 @@ class Giratina(Kit):
     TEXT = dict(title_active="#f4e4c8", title_inactive="#8a7a80", menu_title="#f4e4c8",
                 menu="#e8d8d0", menu_hilite="#ffffff", dialog="#e8d8d0", tooltip="#f4e4c8")
     CURSOR = (GOLD, SHADOW)
+
+    # ---- shape: Giratina's striped wing spikes jutting out of both sides --------
+
+    SHAPE = dict(left=34, right=34)
+
+    def decorations(self):
+        W, H = 39, 100     # 34px margin + 5px frame; drawn for the left side, mirrored for the right
+
+        def wing(active):
+            # Giratina's wing: three broad black blades sweeping out and up from the
+            # frame, each with a red stripe and a gold claw at the tip
+            edge, stripe, claw = (STRIPE, STRIPE, GOLD) if active else ("#4a3036", "#4a3036", "#5a4a40")
+            b = ""
+            for y, reach, rise, thick in ((26, 37, 24, 16), (52, 32, 18, 14), (76, 25, 12, 12)):
+                bx, tx, ty = W, W - reach, y - rise
+                # top edge bulges up towards the tip; bottom edge runs back nearly straight
+                d = (f"M{bx},{y} C{bx - reach * 0.45},{y - rise * 0.75} {tx + 4},{ty} {tx},{ty} "
+                     f"C{tx + reach * 0.3},{ty + rise * 0.55} {bx - reach * 0.4},{y + thick * 0.55} {bx},{y + thick} Z")
+                b += path(d, fill=SHADOW, stroke=edge, sw=1.2)
+                b += path(f"M{bx - 1},{y + thick * 0.45} C{bx - reach * 0.45},{y - rise * 0.15} "
+                          f"{tx + reach * 0.3},{ty + rise * 0.3} {tx + 3},{ty + 1.5}", stroke=stripe, sw=1.8)
+                b += path(f"M{tx},{ty} L{tx + 6},{ty + 0.5} L{tx + 3},{ty + 5} Z", fill=claw)
+            return b
+
+        T = self.M["title_h"]
+        left = lambda active: svg(W, H, wing(active))
+        right = lambda active: svg(W, H, f'<g transform="translate({W},0) scale(-1,1)">{wing(active)}</g>')
+        return [("wing_l", W, H, "tl", 0, T + 6, left),
+                ("wing_r", W, H, "tr", 0, T + 6, right)]
 
     def ornament(self, active):
         return ribs(4, 3, active)
